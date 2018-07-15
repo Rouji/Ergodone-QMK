@@ -13,8 +13,13 @@ enum custom_keycodes {
   PLACEHOLDER = SAFE_RANGE, // can always be here
   EPRM,
   VRSN,
-  RGB_SLD
+  AUML,
+  UUML,
+  OUML,
+  SZ
 };
+
+static bool SHIFTED = false;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /* Keymap 0: Basic layer
@@ -66,9 +71,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,---------------------------------------------------.           ,--------------------------------------------------.
  * | version |  F1  |  F2  |  F3  |  F4  |  F5  | F11  |           | F12  |  F6  |  F7  |  F8  |  F9  |  F10 |        |
  * |---------+------+------+------+------+------+------|           |------+------+------+------+------+------+--------|
- * |         |   !  |   @  |   {  |   }  |   |  |      |           |      |      |      |      |      |      |        |
+ * |         |   !  |   @  |   {  |   }  |   |  |      |           |      |      |  ü   |      |  ö   |      |        |
  * |---------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |         |   #  |   $  |   (  |   )  |   `  |------|           |------| left | down |  up  | right|      |        |
+ * |         |   ä  |   ß  |   (  |   )  |   `  |------|           |------| left | down |  up  | right|      |        |
  * |---------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * |         |   %  |   ^  |   [  |   ]  |   ~  |      |           |      |      |      |      |      |      |        |
  * `---------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
@@ -86,7 +91,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    // left hand (symbols)
    VRSN,      KC_F1,     KC_F2,     KC_F3,     KC_F4,     KC_F5,     KC_F11,
    _______,   KC_EXLM,   KC_AT,     KC_LCBR,   KC_RCBR,   KC_PIPE,   _______,
-   _______,   KC_HASH,   KC_DLR,    KC_LPRN,   KC_RPRN,   KC_GRV,
+   _______,   AUML,      SZ,        KC_LPRN,   KC_RPRN,   KC_GRV,
    _______,   KC_PERC,   KC_CIRC,   KC_LBRC,   KC_RBRC,   KC_TILD,   _______,
    _______,   _______,   _______,   _______,   _______,
                                                _______,   _______,
@@ -94,7 +99,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                     _______,   _______,   _______,
    // right hand (vim movements)
    KC_F12,    KC_F6,     KC_F7,     KC_F8,     KC_F9,      KC_F10,    _______,
-   _______,   _______,   _______,   _______,   _______,    _______,   _______,
+   _______,   _______,   UUML,      _______,   OUML,    _______,   _______,
               KC_LEFT,   KC_DOWN,   KC_UP,     KC_RIGHT,   _______,   _______,
    _______,   _______,   _______,   _______,   _______,    _______,   _______,
                          _______,   _______,   _______,    _______,   _______,
@@ -168,29 +173,45 @@ const macro_t *action_get_macro(keyrecord_t *record, uint8_t id, uint8_t opt)
 };
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  switch (keycode) {
-    // dynamically generate these.
-    case EPRM:
-      if (record->event.pressed) {
-        eeconfig_init();
-      }
-      return false;
-      break;
-    case VRSN:
-      if (record->event.pressed) {
-        SEND_STRING (QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION);
-      }
-      return false;
-      break;
-    case RGB_SLD:
-      if (record->event.pressed) {
-        #ifdef RGBLIGHT_ENABLE
-          rgblight_mode(1);
-        #endif
-      }
-      return false;
-      break;
-  }
+    if (keycode == KC_LSFT || keycode == KC_RSFT)
+    {
+        SHIFTED = record->event.pressed;
+    }
+
+    if (record->event.pressed)
+    {
+        switch (keycode)
+        {
+            // dynamically generate these.
+            case EPRM:
+                eeconfig_init();
+                return false;
+            case VRSN:
+                SEND_STRING (QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION);
+                return false;
+            case AUML:
+                if (SHIFTED)
+                    SEND_STRING (SS_TAP(X_RALT) "\"A");
+                else
+                    SEND_STRING (SS_TAP(X_RALT) "\"a");
+                return false;
+            case UUML:
+                if (SHIFTED)
+                    SEND_STRING (SS_TAP(X_RALT) "\"U");
+                else
+                    SEND_STRING (SS_TAP(X_RALT) "\"u");
+                return false;
+            case OUML:
+                if (SHIFTED)
+                    SEND_STRING (SS_TAP(X_RALT) "\"O");
+                else
+                    SEND_STRING (SS_TAP(X_RALT) "\"o");
+                return false;
+            case SZ:
+                SEND_STRING (SS_TAP(X_RALT) "ss");
+                return false;
+        }
+    }
   return true;
 }
 
